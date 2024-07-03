@@ -78,7 +78,11 @@ module.exports = function (fetch, defaults) {
                 return Promise.resolve(retryOn(attempt, null, response))
                   .then(function (retryOnResponse) {
                     if(retryOnResponse) {
-                      retry(attempt, null, response);
+                      if (attempt < retries) {
+                        retry(attempt, null, response);
+                      } else {
+                        resolve(response);
+                      }
                     } else {
                       resolve(response);
                     }
@@ -101,7 +105,11 @@ module.exports = function (fetch, defaults) {
                 Promise.resolve(retryOn(attempt, error, null))
                   .then(function (retryOnResponse) {
                     if(retryOnResponse) {
-                      retry(attempt, error, null);
+                      if (attempt < retries) {
+                        retry(attempt, error, null);
+                      } else {
+                        reject(error);
+                      }
                     } else {
                       reject(error);
                     }

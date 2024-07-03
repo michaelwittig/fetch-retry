@@ -204,6 +204,106 @@ describe('fetch-retry integration tests', () => {
         });
     
       });
+
+      describe('when configured to retry on a specific function', () => {
+    
+        describe('and it never succeeds', () => {
+    
+          const retryOn = (attempt, error, response) => response.status === 503;
+    
+          beforeEach(() => {
+            return setupResponses([503, 503, 503, 503]);
+          });
+    
+          it('retries the request #retries times', () => {
+            const init = {
+              retries: 3,
+              retryDelay: 100,
+              retryOn
+            };
+    
+            const expectedCallCount = init.retries + 1;
+    
+            return fetchInvocation(baseUrl, init)
+              .then(getCallCount)
+              .should.eventually.equal(expectedCallCount);
+          });
+    
+          it('eventually resolves the promise with the response of the last request', () => {
+            const init = {
+              retries: 3,
+              retryDelay: 100,
+              retryOn
+            };
+    
+            const expectedResponse = {
+              status: 503,
+              ok: false
+            };
+    
+            return fetchInvocation(baseUrl, init)
+              .then(response => {
+                return {
+                  status: response.status,
+                  ok: response.ok
+                };
+              })
+              .should.become(expectedResponse);
+          });
+    
+        });
+    
+        describe('and it eventually succeeds', () => {
+    
+          const retryOnStatus = 503;
+          const responses = [503, 503, 200];
+          const requestsToRetry = responses
+            .filter(response => response === retryOnStatus)
+            .length;
+    
+          beforeEach(() => {
+            return setupResponses(responses);
+          });
+    
+          it('retries the request up to #retries times', () => {
+            const init = {
+              retries: 3,
+              retryDelay: 100,
+              retryOn: (attempt, error, response) => response.status === retryOnStatus
+            };
+    
+            const expectedCallCount = requestsToRetry + 1;
+    
+            return fetchInvocation(baseUrl, init)
+              .then(getCallCount)
+              .should.eventually.equal(expectedCallCount);
+          });
+    
+          it('eventually resolves the promise with the received response of the last request', () => {
+            const init = {
+              retries: 3,
+              retryDelay: 100,
+              retryOn: (attempt, error, response) => response.status === retryOnStatus
+            };
+    
+            const expectedResponse = {
+              status: 200,
+              ok: true
+            };
+    
+            return fetchInvocation(baseUrl, init)
+              .then(response => {
+                return {
+                  status: response.status,
+                  ok: response.ok
+                };
+              })
+              .should.become(expectedResponse);
+          });
+    
+        });
+    
+      });
   
     });
 

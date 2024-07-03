@@ -842,6 +842,70 @@ describe('fetch-retry', function () {
                     expect(retryOn.lastCall.args[0]).toBe(1);
                   });
 
+                  describe('after specified time', function () {
+
+                    beforeEach(function () {
+                      clock.tick(delay);
+                    });
+
+                    it('invokes fetch again', function () {
+                      expect(fetch.callCount).toBe(3);
+                    });
+
+                    describe('when the third call is unsuccessful', function () {
+
+                      beforeEach(function () {
+                        deferred3.reject(new Error('third error'));
+                        clock.tick(delay);
+                      });
+
+                      describe('when rejected', function () {
+
+                        it('invokes the #retryOn function three times', function () {
+                          expect(retryOn.callCount).toBe(3);
+                          expect(retryOn.lastCall.args[0]).toBe(2);
+                        });
+
+                        describe('after specified time', function () {
+
+                          beforeEach(function () {
+                            clock.tick(delay);
+                          });
+
+                          it('invokes fetch again', function () {
+                            expect(fetch.callCount).toBe(4);
+                          });
+
+                          describe('when the fourth call is unsuccessful', function () {
+
+                            beforeEach(function () {
+                              deferred4.reject(new Error('third error'));
+                              clock.tick(delay);
+                            });
+
+                            describe('when rejected', function () {
+
+                              it('invokes the catch callback', function () {
+                                expect(catchCallback.called).toBe(true);
+                              });
+
+                              it('does not call fetch again', function () {
+                                expect(fetch.callCount).toBe(4);
+                              });
+
+                            });
+
+                          });
+
+                        });
+
+
+                      });
+
+                    });
+
+                  });
+
                 });
 
               });
